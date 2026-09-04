@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <title>Forca</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, #252a4a 0%, #111426 45%, #090b14 100%);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+      overflow-x: hidden;
+    }
+
+    .game {
+      width: 100%;
+      max-width: 430px;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .top {
+      margin-bottom: 18px;
+    }
+
+    .top h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .top p {
+      margin: 5px 0 0;
+      color: #9da3bd;
+      font-size: 14px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 26px;
+      padding: 20px 16px 18px;
+      box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.35),
+        inset 0 1px rgba(255,255,255,.05);
+      backdrop-filter: blur(14px);
+    }
+
+    /* =========================
+       FORCA
+    ========================= */
+
+    .hangman {
+      height: 190px;
+      position: relative;
+      margin-bottom: 5px;
+    }
+
+    .gallows {
+      position: absolute;
+      left: 50%;
+      top: 10px;
+      width: 130px;
+      height: 165px;
+      transform: translateX(-50%);
+    }
+
+    .line {
+      position: absolute;
+      background: #c8ccda;
+      border-radius: 5px;
+    }
+
+    .base {
+      width: 100px;
+      height: 6px;
+      bottom: 5px;
+      left: 8px;
+    }
+
+    .pole {
+      width: 6px;
+      height: 155px;
+      bottom: 8px;
+      left: 20px;
+    }
+
+    .top-line {
+      width: 75px;
+      height: 6px;
+      top: 5px;
+      left: 20px;
+    }
+
+    .support {
+      width: 6px;
+      height: 34px;
+      top: 7px;
+      left: 91px;
+    }
+
+    .rope {
+      width: 3px;
+      height: 20px;
+      top: 10px;
+      left: 89px;
+      background: #c8ccda;
+      position: absolute;
+    }
+
+    .part {
+      display: none;
+      position: absolute;
+      border-color: #ff6685;
+    }
+
+    .head {
+      width: 34px;
+      height: 34px;
+      border: 5px solid #ff6685;
+      border-radius: 50%;
+      top: 29px;
+      left: 73px;
+    }
+
+    .body {
+      width: 5px;
+      height: 50px;
+      background: #ff6685;
+      top: 61px;
+      left: 87px;
+      border-radius: 5px;
+    }
+
+    .arm-left,
+    .arm-right {
+      width: 38px;
+      height: 5px;
+      background: #ff6685;
+      top: 73px;
+      left: 52px;
+      transform: rotate(-35deg);
+      border-radius: 5px;
+    }
+
+    .arm-right {
+      left: 88px;
+      transform: rotate(35deg);
+    }
+
+    .leg-left,
+    .leg-right {
+      width: 40px;
+      height: 5px;
+      background: #ff6685;
+      top: 107px;
+      left: 51px;
+      transform: rotate(-48deg);
+      border-radius: 5px;
+    }
+
+    .leg-right {
+      left: 87px;
+      transform: rotate(48deg);
+    }
+
+    .errors {
+      color: #ff829b;
+      font-size: 13px;
+      min-height: 20px;
+    }
+
+    /* =========================
+       PALAVRA
+    ========================= */
+
+    .word {
+      min-height: 58px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin: 5px 0 17px;
+    }
+
+    .letter {
+      width: 28px;
+      height: 38px;
+      border-bottom: 3px solid #747a98;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 23px;
+      font-weight: 800;
+    }
+
+    .letter.space {
+      width: 14px;
+      border: none;
+    }
+
+    .letter.revealed {
+      border-color: #6ee7b7;
+      color: #6ee7b7;
+      animation: pop .22s ease;
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(.6);
+        opacity: .3;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* =========================
+       TECLADO
+    ========================= */
+
+    .keyboard {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 7px;
+    }
+
+    .key {
+      border: 0;
+      min-height: 43px;
+      border-radius: 11px;
+      background: #292e4b;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .1s, background .15s;
+      box-shadow: 0 3px 0 #1b1f35;
+    }
+
+    .key:active {
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+
+    .key.used {
+      opacity: .35;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .key.correct {
+      background: #23785e;
+    }
+
+    .key.wrong {
+      background: #7a3045;
+    }
+
+    /* =========================
+       RODADA
+    ========================= */
+
+    .round {
+      margin-top: 17px;
+      color: #9da3bd;
+      font-size: 13px;
+    }
+
+    .round strong {
+      color: #fff;
+    }
+
+    /* =========================
+       MODAL
+    ========================= */
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 15, .78);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      z-index: 10;
+    }
+
+    .overlay.show {
+      display: flex;
+      animation: fade .2s ease;
+    }
+
+    @keyframes fade {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 360px;
+      background: #191d32;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 26px;
+      padding: 30px 22px 24px;
+      text-align: center;
+      box-shadow: 0 25px 80px rgba(0,0,0,.5);
+      animation: modal .25s ease;
+    }
+
+    @keyframes modal {
+      from {
+        transform: scale(.85);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal .emoji {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    .modal h2 {
+      margin: 0 0 8px;
+      font-size: 25px;
+    }
+
+    .modal p {
+      margin: 0 0 22px;
+      color: #a8aec5;
+    }
+
+    .next {
+      width: 100%;
+      border: 0;
+      padding: 15px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #7167ff, #9b65ff);
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* =========================
+       NEVE
+    ========================= */
+
+    #snow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 20;
+      display: none;
+    }
+
+    #snow.active {
+      display: block;
+    }
+
+    .snowflake {
+      position: absolute;
+      top: -30px;
+      color: white;
+      user-select: none;
+      opacity: .85;
+      filter: drop-shadow(0 0 5px rgba(255,255,255,.6));
+      animation-name: snowfall;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
+    }
+
+    @keyframes snowfall {
+      0% {
+        transform: translate3d(0, -30px, 0) rotate(0deg);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: .9;
+      }
+
+      90% {
+        opacity: .9;
+      }
+
+      100% {
+        transform: translate3d(var(--drift), 110vh, 0) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    /* Clima muda levemente quando chega Bariloche */
+    body.snow-mode {
+      background:
+        radial-gradient(circle at top, #354d75 0%, #18233c 48%, #09101d 100%);
+      transition: background 1.5s ease;
+    }
+
+    @media (max-width: 360px) {
+
+      .keyboard {
+        gap: 5px;
+      }
+
+      .key {
+        min-height: 40px;
+        font-size: 14px;
+      }
+
+      .letter {
+        width: 25px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="snow"></div>
+
+  <main class="game">
+
+    <div class="top">
+      <h1>Forca</h1>
+      <p>Descubra a cidade</p>
+    </div>
+
+    <div class="card">
+
+      <div class="hangman">
+
+        <div class="gallows">
+
+          <div class="line base"></div>
+          <div class="line pole"></div>
+          <div class="line top-line"></div>
+          <div class="line support"></div>
+          <div class="rope"></div>
+
+          <div class="part head"></div>
+          <div class="part body"></div>
+          <div class="part arm-left"></div>
+          <div class="part arm-right"></div>
+          <div class="part leg-left"></div>
+          <div class="part leg-right"></div>
+
+        </div>
+
+      </div>
+
+      <div class="errors" id="errors">
+        Erros: 0 / 6
+      </div>
+
+      <div class="word" id="word"></div>
+
+      <div class="keyboard" id="keyboard"></div>
+
+      <div class="round">
+        Cidade <strong id="roundNumber">1</strong> de <strong>3</strong>
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <div class="overlay" id="overlay">
+
+    <div class="modal">
+
+      <div class="emoji" id="modalEmoji">🎉</div>
+
+      <h2 id="modalTitle">Acertou!</h2>
+
+      <p id="modalText"></p>
+
+      <button class="next" id="nextButton" type="button">
+        Continuar
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    /*
+      ============================================
+      CIDADES
+      ============================================
+    */
+
+    const cities = [
+      "SÃO PAULO",
+      "MACEIÓ",
+      "BARILOCHE"
+    ];
+
+
+    const alphabet =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+
+    let currentRound = 0;
+    let secretWord = "";
+    let normalizedWord = "";
+    let guessed = [];
+    let errors = 0;
+    let roundEnded = false;
+
+    const maxErrors = 6;
+
+
+    /*
+      ============================================
+      NORMALIZAÇÃO
+      ============================================
+
+      Faz Á, Ã, À etc. funcionarem como A.
+    */
+
+    function normalize(text) {
+
+      return text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase();
+
+    }
+
+
+    /*
+      ============================================
+      INICIA RODADA
+      ============================================
+    */
+
+    function startRound() {
+
+      secretWord = cities[currentRound];
+
+      normalizedWord = normalize(secretWord);
+
+      guessed = [];
+
+      errors = 0;
+      roundEnded = false;
+
+      document.getElementById("roundNumber").textContent =
+        currentRound + 1;
+
+      document
+        .getElementById("overlay")
+        .classList.remove("show");
+
+      createWord();
+
+      createKeyboard();
+
+      updateHangman();
+
+      updateErrors();
+
+    }
+
+
+    /*
+      ============================================
+      PALAVRA
+      ============================================
+    */
+
+    function createWord() {
+
+      const wordContainer =
+        document.getElementById("word");
+
+      wordContainer.innerHTML = "";
+
+      for (let i = 0; i < secretWord.length; i++) {
+
+        const originalLetter =
+          secretWord[i];
+
+        if (originalLetter === " ") {
+
+          const space =
+            document.createElement("div");
+
+          space.className = "letter space";
+
+          wordContainer.appendChild(space);
+
+          continue;
+        }
+
+        const letter =
+          document.createElement("div");
+
+        letter.className = "letter";
+
+        const normalizedLetter =
+          normalize(originalLetter);
+
+        if (guessed.includes(normalizedLetter)) {
+
+          letter.textContent =
+            originalLetter;
+
+          letter.classList.add("revealed");
+
+        }
+
+        wordContainer.appendChild(letter);
+
+      }
+
+    }
+
+
+    /*
+      ============================================
+      TECLADO
+      ============================================
+    */
+
+    function createKeyboard() {
+
+      const keyboard =
+        document.getElementById("keyboard");
+
+      keyboard.innerHTML = "";
+
+      alphabet.forEach(letter => {
+
+        const button =
+          document.createElement("button");
+
+        button.className = "key";
+        button.type = "button";
+
+        button.textContent = letter;
+
+        if (guessed.includes(letter)) {
+
+          button.classList.add("used");
+
+          if (normalizedWord.includes(letter)) {
+
+            button.classList.add("correct");
+
+          } else {
+
+            button.classList.add("wrong");
+
+          }
+
+        }
+
+        button.addEventListener(
+          "click",
+          () => guess(letter)
+        );
+
+        keyboard.appendChild(button);
+
+      });
+
+    }
+
+
+    /*
+      ============================================
+      TENTATIVA
+      ============================================
+    */
+
+    function guess(letter) {
+
+      if (roundEnded || guessed.includes(letter)) {
+        return;
+      }
+
+      guessed.push(letter);
+
+      if (!normalizedWord.includes(letter)) {
+        errors++;
+      }
+
+      createWord();
+
+      createKeyboard();
+
+      updateHangman();
+
+      updateErrors();
+
+      checkGame();
+
+    }
+
+
+    function updateErrors() {
+
+      document.getElementById("errors").textContent =
+        `Erros: ${errors} / ${maxErrors}`;
+
+    }
+
+
+    /*
+      ============================================
+      BONECO
+      ============================================
+    */
+
+    function updateHangman() {
+
+      const parts =
+        document.querySelectorAll(".part");
+
+      parts.forEach((part, index) => {
+
+        part.style.display =
+          index < errors
+            ? "block"
+            : "none";
+
+      });
+
+    }
+
+
+    /*
+      ============================================
+      VERIFICA PALAVRA
+      ============================================
+    */
+
+    function wordCompleted() {
+
+      for (let letter of normalizedWord) {
+
+        if (letter === " ") {
+          continue;
+        }
+
+        if (!guessed.includes(letter)) {
+          return false;
+        }
+
+      }
+
+      return true;
+
+    }
+
+
+    /*
+      ============================================
+      VERIFICA FIM
+      ============================================
+    */
+
+    function checkGame() {
+
+      if (wordCompleted()) {
+
+        roundEnded = true;
+
+        setTimeout(() => {
+
+          /*
+            Se for BARILOCHE:
+            ativa a neve.
+          */
+
+          if (currentRound === 2) {
+
+            startSnow();
+
+            document.body.classList.add(
+              "snow-mode"
+            );
+
+            showModal(
+              "❄️",
+              "Fim!",
+              "Você completou as 3 cidades.",
+              "Jogar novamente"
+            );
+
+            return;
+          }
+
+
+          showModal(
+            "🎉",
+            "Acertou!",
+            "Cidade descoberta.",
+            "Próxima"
+          );
+
+        }, 350);
+
+        return;
+      }
+
+
+      /*
+        Perdeu a rodada
+      */
+
+      if (errors >= maxErrors) {
+
+        roundEnded = true;
+
+        setTimeout(() => {
+
+          showModal(
+            "😅",
+            "Quase!",
+            `A cidade era ${secretWord}.`,
+            "Tentar novamente"
+          );
+
+        }, 350);
+
+      }
+
+    }
+
+
+    /*
+      ============================================
+      MODAL
+      ============================================
+    */
+
+    function showModal(
+      emoji,
+      title,
+      text,
+      buttonText
+    ) {
+
+      document.getElementById(
+        "modalEmoji"
+      ).textContent = emoji;
+
+      document.getElementById(
+        "modalTitle"
+      ).textContent = title;
+
+      document.getElementById(
+        "modalText"
+      ).textContent = text;
+
+      document.getElementById(
+        "nextButton"
+      ).textContent = buttonText;
+
+      document.getElementById(
+        "overlay"
+      ).classList.add("show");
+
+    }
+
+
+    /*
+      ============================================
+      BOTÃO DO MODAL
+      ============================================
+    */
+
+    document
+      .getElementById("nextButton")
+      .addEventListener("click", () => {
+
+        /*
+          Se perdeu:
+          reinicia a mesma rodada.
+        */
+
+        if (errors >= maxErrors) {
+
+          stopSnow();
+
+          startRound();
+
+          return;
+        }
+
+
+        /*
+          Terminou BARILOCHE:
+          reinicia o jogo.
+        */
+
+        if (currentRound === cities.length - 1) {
+
+          stopSnow();
+
+          currentRound = 0;
+
+          startRound();
+
+          return;
+        }
+
+
+        /*
+          Próxima cidade
+        */
+
+        currentRound++;
+
+        startRound();
+
+      });
+
+
+    /*
+      ============================================
+      TECLADO FÍSICO
+      ============================================
+    */
+
+    document.addEventListener(
+      "keydown",
+      event => {
+
+        const letter =
+          normalize(event.key);
+
+        if (
+          letter.length === 1 &&
+          alphabet.includes(letter)
+        ) {
+
+          guess(letter);
+
+        }
+
+      }
+    );
+
+
+    /*
+      ============================================
+      NEVE ❄️
+      ============================================
+    */
+
+    let snowInterval = null;
+
+
+    function startSnow() {
+
+      const snow =
+        document.getElementById("snow");
+
+      snow.classList.add("active");
+
+      /*
+        Começa com alguns flocos imediatamente.
+      */
+
+      for (let i = 0; i < 35; i++) {
+        createSnowflake(true);
+      }
+
+      /*
+        Continua criando flocos enquanto
+        a tela final estiver aberta.
+      */
+
+      snowInterval = setInterval(() => {
+
+        createSnowflake(false);
+
+      }, 180);
+
+    }
+
+
+    function createSnowflake(initial) {
+
+      const snow =
+        document.getElementById("snow");
+
+      const flake =
+        document.createElement("div");
+
+      flake.className = "snowflake";
+
+      /*
+        Alterna entre diferentes símbolos
+        para não ficar tudo igual.
+      */
+
+      const symbols = [
+        "❄",
+        "❅",
+        "❆",
+        "•"
+      ];
+
+      flake.textContent =
+        symbols[
+          Math.floor(
+            Math.random() * symbols.length
+          )
+        ];
+
+      const size =
+        8 + Math.random() * 15;
+
+      const duration =
+        4 + Math.random() * 6;
+
+      const left =
+        Math.random() * 100;
+
+      const drift =
+        (Math.random() * 180 - 90) + "px";
+
+      flake.style.left =
+        left + "vw";
+
+      flake.style.fontSize =
+        size + "px";
+
+      flake.style.animationDuration =
+        duration + "s";
+
+      flake.style.setProperty(
+        "--drift",
+        drift
+      );
+
+      if (initial) {
+
+        flake.style.animationDelay =
+          (-Math.random() * duration) + "s";
+
+      }
+
+      snow.appendChild(flake);
+
+
+      /*
+        Remove o floco depois da animação
+        para não acumular elementos.
+      */
+
+      setTimeout(() => {
+
+        flake.remove();
+
+      }, (duration + 1) * 1000);
+
+    }
+
+
+    function stopSnow() {
+
+      const snow =
+        document.getElementById("snow");
+
+      snow.classList.remove("active");
+
+      snow.innerHTML = "";
+
+      document.body.classList.remove(
+        "snow-mode"
+      );
+
+      if (snowInterval) {
+
+        clearInterval(snowInterval);
+
+        snowInterval = null;
+
+      }
+
+    }
+
+
+    /*
+      ============================================
+      COMEÇA O JOGO
+      ============================================
+    */
+
+    startRound();
+
+  </script>
+
+</body>
+</html>
